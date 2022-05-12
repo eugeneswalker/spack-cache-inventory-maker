@@ -1,0 +1,58 @@
+<html>
+
+<head>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jq-3.6.0/dt-1.11.3/datatables.min.css"/>
+<script type="text/javascript" src="https://cdn.datatables.net/v/dt/jq-3.6.0/dt-1.11.3/datatables.min.js"></script>    
+
+<script type="text/javascript">
+$(document).ready(function() {
+    $('#example').DataTable({
+        "order": [[4, "desc"]]
+    });
+});
+</script>
+
+<style type="text/css">
+#wrap {
+    margin: 50px;
+    text-align: center;
+}
+</style>
+</head>
+
+<body>
+
+<div id="wrap">
+    <h1>E4S Build Cache for Spack 0.17.1</h1>
+
+    <h1>{{.Name}}</h1>
+
+    <table id="example" class="row-border hover" style="width:100%">
+        <thead>
+            <tr>
+                <th style="text-align: left">Name</th>
+                <th style="text-align: left">Compiler</th>
+                <th style="text-align: left">Arch</th>
+                <th style="text-align: left">OS</th>
+                <th style="text-align: left">Modified</th>
+                <th style="text-align: left">Spec File</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {{range .Variants}}
+            <tr>
+                <td>{{.Name}}</td>
+                <td>{{.Compiler}}</td>
+                <td>{{.Arch}}</td>
+                <td>{{.OS}}</td>
+                <td>{{.LastModified}}</td>
+                <td><a href="https://cache.e4s.io/build_cache/{{.SpecFile}}">Download</a></td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+</body>
+
+</html>

@@ -1,0 +1,9 @@
+package.html
+index.html
+packages
+*.zip
+.DS_Store
+generate-index
+inventory.json
+inventory-data.json
+newinv

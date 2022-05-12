@@ -1,0 +1,164 @@
+<html>
+
+<head>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jq-3.6.0/dt-1.11.3/datatables.min.css"/>
+<script type="text/javascript" src="https://cdn.datatables.net/v/dt/jq-3.6.0/dt-1.11.3/datatables.min.js"></script>
+
+<script type="text/javascript">
+$(function() {
+    $("#pkgsearch").val("");
+
+    function applyRadioFilter() {
+        var arch = $("input[name=arch]:checked").attr("value");
+        var os = $("input[name=os]:checked").attr("value");
+
+        $("#pkgsearch").val("");
+        $("#packages>li").show();
+
+        if (arch == "all" && os != "all") {
+            $("#packages>li").each(function() {
+                if (!$(this).hasClass(os)) {
+                    $(this).hide();
+                }
+            });
+        }
+        else if (arch != "all" && os == "all") {
+            $("#packages>li").each(function() {
+                if (!$(this).hasClass(arch)) {
+                    $(this).hide();
+                }
+            });
+        }
+        else if (arch != "all" && os != "all") {
+            $("#packages>li").each(function() {
+                if (!($(this).hasClass(os) && $(this).hasClass(arch))) {
+                    $(this).hide();
+                }
+            });
+        }
+    }
+
+    $("#pkgsearch").on("input", function() {
+        $("input[type=radio][value=all]").prop("checked", true);
+        var v = $(this).val().toLowerCase().trim();
+        $("#packages>li").filter(function() {
+            $(this).toggle($(this).find("a").text().toLowerCase().trim().indexOf(v) > -1);
+        });
+    });
+
+    $("#arch-selector>div,#os-selector>div").on("click", function(el) {
+        $(this).find("input[type=radio]").prop("checked", true);
+        applyRadioFilter();
+    });
+
+    $("input[type=radio]").on("change", function() {
+        applyRadioFilter();
+        console.log("DETECTED CHANGE");
+    });
+
+});
+
+</script>
+
+<style type="text/css">
+#wrap {
+    margin: 50px;
+    text-align: center;
+}
+
+ol {
+    list-style-type: none;
+}
+
+ol li {
+    display: inline-block;
+    margin: 10px;
+}
+
+#search-wrapper {
+    margin: 30px 0;
+	text-align: center;
+}
+
+#pkgsearch {
+	border-radius: 5px;
+	padding: 5px;
+	font-size: 1.1em;
+	min-width: 400px;
+    text-align: center;
+}
+
+#meta {
+    margin: 30px 0;
+}
+
+#arch-selector > div, #os-selector > div {
+    display: inline-block;
+    cursor: pointer;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="wrap">
+    <h1>E4S Build Cache for Spack 0.17.1</h1>
+
+    <div id="instructions">
+        <p>To add this mirror to your Spack:</p>
+        <pre>$&gt; spack mirror add E4S https://cache.e4s.io</pre>
+        <pre>$&gt; spack buildcache keys -it</pre>
+      </div>
+
+    <div id="meta">
+        <p>{{.PackageCount}} total packages</p>
+        <p>Last updated {{.LastUpdatedAt}}</p>
+    </div>
+
+    <div id="arch-selector" style="text-align: center">
+        <div><input type="radio" name="arch" value="all" checked="true"> All Arch &nbsp;&nbsp;</div>
+        <div><input type="radio" name="arch" value="ppc64le"> PPC64LE &nbsp;&nbsp;</div>
+        <div><input type="radio" name="arch" value="x86_64"> X86_64</div>
+    </div>
+
+    <div id="os-selector" style="text-align: center; margin-top: 15px;">
+        <div><input type="radio" name="os" value="all" checked="true"> All OS &nbsp;&nbsp;</div>
+        <div><input type="radio" name="os" value="centos7"> Centos 7 &nbsp;&nbsp;</div>
+        <div><input type="radio" name="os" value="centos8"> Centos 8 &nbsp;&nbsp;</div>
+        <div><input type="radio" name="os" value="rhel7"> RHEL 7 &nbsp;&nbsp;</div>
+        <div><input type="radio" name="os" value="rhel8"> RHEL 8 &nbsp;&nbsp;</div>
+        <div><input type="radio" name="os" value="ubuntu18.04"> Ubuntu 18.04 &nbsp;&nbsp;</div>
+        <div><input type="radio" name="os" value="ubuntu20.04"> Ubuntu 20.04 &nbsp;&nbsp;</div>
+    </div>
+
+    <div id="search-wrapper">
+        <input type="text" id="pkgsearch" placeholder="Search">
+    </div>
+
+    <ol id="packages">
+        {{range .Packages}}
+        <li class="{{.Tags}}"><a href="packages/{{.UppercaseName}}.html">{{.Name}}</a></li>
+        {{end}}
+    </ol>
+    <!-- <table id="example" class="row-border hover" style="width:100%">
+        <thead>
+            <tr>
+                <th style="text-align: left">Name</th>
+                <th style="text-align: left">Tags</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {{range .Packages}}
+            <tr>
+                <td>{{.Name}}</td>
+                <td>Cori</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table> -->
+</div>
+</body>
+
+</html>
