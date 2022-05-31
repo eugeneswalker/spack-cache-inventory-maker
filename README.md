@@ -26,7 +26,7 @@ $> ./build.sh
 
 # Adjust parallelism as appropriate in run-0-parse.sh
 $> ./run-0-parse.sh
-$> ./run-1-parse.sh
+$> ./run-1-add-modtimes.sh
 
 $> cd ..
 ```
