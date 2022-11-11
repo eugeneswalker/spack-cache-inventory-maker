@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
-DATA_DIR=${DATA_DIR:-../data}
-SPECFILE_DIR=${DATA_DIR}/specfiles
+DATA_DIR=${DATA_DIR:-../data/22.11}
+SPECFILE_DIR=${SPECFILE_DIR:-${DATA_DIR}/specfiles}
 PARALLELISM=12
 
 ./parse \

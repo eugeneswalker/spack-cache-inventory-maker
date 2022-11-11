@@ -47,14 +47,14 @@ s3_ep = os.environ['S3_ENDPOINT_URL']
 s3_ep_sp = s3_ep.split('://')
 host = s3_ep_sp[1] if len(s3_ep_sp) > 1 else s3_ep_sp[0]
 bucket = os.environ['S3_BUCKET_ID']
-prefix = 'build_cache/'
+prefix = os.environ['BUILDCACHE_PREFIX'] #'build_cache/'
 
 def initialize():
 	global mc
 	mc = Minio(host, access_key=user, secret_key=pw, secure=True)
 
 def stat(obj):
-	p = "{}{}".format('build_cache/', obj['specfile'])
+	p = "{}/{}".format(prefix, obj['specfile'])
 	try:
 		print("stat'ing {}".format(p))
 		so = mc.stat_object(bucket, p)

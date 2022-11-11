@@ -118,6 +118,10 @@ type SpecYamlV2 struct {
 	Specs []map[string]*SpecV2 `yaml:"spec"`
 }
 
+type SpecYamlV3 struct {
+	Specs []map[string]*SpecV3 `yaml:"spec"`
+}
+
 func (sj *SpecJsonV1) Spec() Spec {
 	s := Spec{}
 	n := sj.Specs.Nodes[0]
@@ -243,16 +247,19 @@ func workJson(paths []string, r chan []Spec, d chan int) {
 func main() {
 	initGlobalOpts()
 
-	fns, err := filesWithSuffix(searchPath, ".spec.yaml")
-	if err != nil {
-		errf("failed to list spec yamls: %s: %v", searchPath, err)
-	}
-
 	specs := make([]Spec, 0)
 	done := make(chan int)
 	results := make(chan []Spec)
 
+	// .spec.yaml
+	fns, err := filesWithSuffix(searchPath, ".spec.yaml")
+	if err != nil {
+		errf("failed to list .spec.yaml: %s: %v", searchPath, err)
+	}
+
 	chunks := chunkify(fns, parallelism)
+
+	fmt.Println("# .spec.yaml = ", len(fns))
 
 	for i := 0; i < parallelism; i += 1 {
 		go work(chunks[i], results, done)
@@ -263,14 +270,34 @@ func main() {
 		specs = append(specs, s...)
 	}
 
+	// .spec.json
 	fns, err = filesWithSuffix(searchPath, ".spec.json")
 	if err != nil {
-		errf("failed to list spec jsons: %s: %v", searchPath, err)
+		errf("failed to list .spec.json: %s: %v", searchPath, err)
 	}
 
 	chunks = chunkify(fns, parallelism)
 
-	fmt.Println("# .spec.jsons = ", len(fns))
+	fmt.Println("# .spec.json = ", len(fns))
+
+	for i := 0; i < parallelism; i += 1 {
+		go workJson(chunks[i], results, done)
+	}
+
+	for i := 0; i < parallelism; i += 1 {
+		s := <-results
+		specs = append(specs, s...)
+	}
+
+	// .spec.json.sig
+	fns, err = filesWithSuffix(searchPath, ".spec.json.sig")
+	if err != nil {
+		errf("failed to list .spec.json.sig: %s: %v", searchPath, err)
+	}
+
+	chunks = chunkify(fns, parallelism)
+
+	fmt.Println("# .spec.json.sig = ", len(fns))
 
 	for i := 0; i < parallelism; i += 1 {
 		go workJson(chunks[i], results, done)

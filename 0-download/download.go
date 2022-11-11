@@ -11,6 +11,10 @@ import (
 	"os"
 	"path"
 	"strings"
+	"path/filepath"
+	"io"
+	"bytes"
+	"bufio"
 )
 
 var (
@@ -52,7 +56,7 @@ func main() {
 
 		for _, o := range r.Contents {
 			k := aws.StringValue(o.Key)
-			if strings.HasSuffix(k, ".spec.json") || strings.HasSuffix(k, ".spec.yaml") {
+			if strings.HasSuffix(k, ".spec.json") || strings.HasSuffix(k, ".spec.yaml") || strings.HasSuffix(k, ".spec.json.sig") {
 				keys = append(keys, k)
 			}
 		}
@@ -76,7 +80,6 @@ func main() {
 		i2 := lower(i1+dt, nkeys)
 		go downloadS3Objects(downloader, keys[i1:i2], done)
 	}
-
 	for i := 0; i < parallelism; i += 1 {
 		<-done
 	}
@@ -121,9 +124,35 @@ func lower(a, b int) int {
 	return b
 }
 
+func lineCounter(r io.Reader) (int, error) {
+    buf := make([]byte, 32*1024)
+    count := 0
+    lineSep := []byte{'\n'}
+
+    for {
+        c, err := r.Read(buf)
+        count += bytes.Count(buf[:c], lineSep)
+
+        switch {
+        case err == io.EOF:
+            return count, nil
+
+        case err != nil:
+            return count, err
+        }
+    }
+}
+
 func downloadS3Objects(downloader *s3manager.Downloader, ns []string, done chan bool) {
 	for _, n := range ns {
 		p := fmt.Sprintf("%s/%s", downloadDir, path.Base(n))
+
+		if _, err := os.Stat(p); err == nil {
+			// already downloaded
+			fmt.Println("Already downloaded", p)
+			continue
+		}
+
 		f, err := os.OpenFile(p, os.O_RDWR|os.O_CREATE, 0755)
 		if err != nil {
 			errf("error: %v", err)
@@ -137,6 +166,50 @@ func downloadS3Objects(downloader *s3manager.Downloader, ns []string, done chan 
 			errf("error: %v", err)
 		}
 		f.Close()
+
+		if strings.HasSuffix(n, ".spec.json.sig") {
+			// open .spec.json.sig
+			sigf, err := os.Open(p)
+			if err != nil {
+				errf("error: %v", err)
+			}
+
+			nLines, err := lineCounter(sigf)
+			if err != nil {
+				errf("error: %v", err)
+			}
+
+			// create corresponding .spec.json
+			jsonFn := strings.TrimSuffix(p, filepath.Ext(p))
+			jsonf, err := os.OpenFile(jsonFn, os.O_RDWR|os.O_CREATE, 0755)
+			if err != nil {
+				errf("error: %v", err)
+			}
+
+			// copy only json contents of .spec.json.sig file to .spec.json file
+			sigf.Seek(0, io.SeekStart)
+			scanner := bufio.NewScanner(sigf)
+			scanner.Split(bufio.ScanLines)
+			i := 0
+			for scanner.Scan() {
+				if i < 3 {
+					i++
+					continue
+				}
+				fmt.Fprintln(jsonf, scanner.Text())
+				i++
+				if i >= nLines - 16 {
+					break
+				}
+			}
+			sigf.Close()
+			jsonf.Close()
+
+			err = os.Rename(jsonFn, p)
+			if err != nil {
+				errf("error: %v", err)
+			}
+		}
 	}
 	done <- true
 }
